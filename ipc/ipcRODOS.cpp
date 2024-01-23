@@ -4,7 +4,7 @@
 #include <fcntl.h> // for O_* constant
 #include <cerrno>
 
-#include "Datastruct.h"
+#include "../include/Datastruct.h"
 #include "ipcRODOS.h"
 
 
