@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-#include "Datastruct.h"
+#include "../include/Datastruct.h"
 
 /**
  * @brief Sends the given power command to the ORPE proccess.
