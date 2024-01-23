@@ -9,7 +9,7 @@
 #include "gateway/router.h"
 #include "gateway/gateway.h"
 
-#include "Datastruct.h"
+#include "../include/Datastruct.h"
 
 namespace RODOS {
 
