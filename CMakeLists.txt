@@ -9,7 +9,7 @@ add_subdirectory(rodos)
 #file(GLOB_RECURSE SRC_FILES src/*.cpp)
 #file(GLOB_RECURSE LIB_FILES lib/*.cpp)
 
-add_executable(COMMS comms/Datalink.cpp, ipc/ipcRODOS.cpp)
+add_executable(COMMS comms/Datalink.cpp ipc/ipcRODOS.cpp)
 
 target_include_directories(COMMS PRIVATE comms/Datalink.h ipc/ipcRODOS.h)
 
