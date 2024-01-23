@@ -11,7 +11,7 @@ add_subdirectory(rodos)
 
 add_executable(COMMS comms/Datalink.cpp ipc/ipcRODOS.cpp)
 
-target_include_directories(COMMS PRIVATE comms/Datalink.h ipc/ipcRODOS.h, include/Datastruct.h)
+target_include_directories(COMMS PRIVATE comms/Datalink.h ipc/ipcRODOS.h include/Datastruct.h)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
