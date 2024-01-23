@@ -1,7 +1,9 @@
-#include <stddef.h>
-#include <sys/types.h>
+#include <stdio.h>
 #include <sys/stat.h>
-#include <fcntl.h> // for O_* constant
+#include <sys/types.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
 #include <cerrno>
 
 #include "../include/Datastruct.h"
