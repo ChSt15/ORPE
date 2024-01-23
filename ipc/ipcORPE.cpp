@@ -63,7 +63,7 @@ void ipcDeinit() {
     close(estPipeID);
     close(pwrPipeID);
 
-    unlink(estPipeID);
-    unlink(pwrPipeID);
+    unlink(EST_PIPE);
+    unlink(PWR_PIPE);
 
 }
