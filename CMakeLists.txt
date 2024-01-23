@@ -9,13 +9,11 @@ add_subdirectory(rodos)
 #file(GLOB_RECURSE SRC_FILES src/*.cpp)
 #file(GLOB_RECURSE LIB_FILES lib/*.cpp)
 
-add_executable(COMMS comms/Datalink.cpp ipc/ipcRODOS.cpp)
+
 
 target_include_directories(COMMS PRIVATE comms/Datalink.h ipc/ipcRODOS.h include/Datastruct.h)
 
-set(CPACK_PROJECT_NAME ${PROJECT_NAME})
-set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
-include(CPack)
+add_executable(COMMS comms/Datalink.cpp ipc/ipcRODOS.cpp)
  
 target_link_libraries(COMMS PUBLIC rodos)
 
@@ -35,17 +33,13 @@ pkg_check_modules(LIBCAMERA REQUIRED libcamera)
 file(GLOB_RECURSE SRC_FILES src/*.cpp)
 file(GLOB_RECURSE LIB_FILES lib/*.cpp)
 
-add_executable(ORPE ${SRC_FILES} ipc/ipcORPE.cpp)
+
 
 target_include_directories(ORPE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ipc/ipcORPE.h)
 target_include_directories(ORPE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 include_directories(${LIBCAMERA_INCLUDE_DIRS} ${OPENCV_INCLUDE_DIRS})
 
-set(CPACK_PROJECT_NAME ${PROJECT_NAME})
-set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
-include(CPack)
- 
-#set(CMAKE_CXX_STANDARD_REQUIRED ON)
+add_executable(ORPE ${SRC_FILES} ipc/ipcORPE.cpp)
 
 include_directories(${OpenCV_INCLUDE_DIRS})
 #include_directories(${raspicam_INCLUDE_DIRS})
