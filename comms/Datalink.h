@@ -1,10 +1,15 @@
-#include "rodos.h"
+#ifndef DATALINK_H
+#define DATALINK_H
 
+
+#include "rodos.h"
 
 #include <stdint.h>
 
 #include "gateway/router.h"
 #include "gateway/gateway.h"
+
+#include "Datastruct.h"
 
 namespace RODOS {
 
@@ -38,3 +43,5 @@ extern RODOS::Topic<bool> orpePowerCommandTopic;
 extern RODOS::CommBuffer<bool> orpePowerCommandBuf;
 
 extern RODOS::Topic<float> orpeTestingTopic;
+
+#endif

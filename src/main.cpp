@@ -7,12 +7,10 @@
 #include "opencv2/opencv.hpp"
 #include <opencv2/videoio.hpp>
 
-#include <rodos.h>
-
 #include "PoseEstimator.h"
 #include "DataLogger.h"
 
-#include "Datalink.h"
+#include "ipcORPE.h"
 
 //Below are settings for debugging and runtime
 #define RUN_ESTIMATOR
@@ -427,80 +425,56 @@ void runEstimatorWithName(std::string videoFile)
 }
 
 
-void threadTest() {
+int main(int argc, char **argv) {
 
-    while (1) {
-	
-	cout << "Time: " << SECONDS_NOW() << endl;
-        auto begin = NOW();
-        while (NOW() - begin < 1*SECONDS);
+    std::cout << "Starting Estimator software.\n Communication initialising..." << std::endl;
 
-    }	
+    //comPort.initialiseUart();
 
-}
+    ipcInit();
 
+    std::cout << "Communication initialised. Starting loop. Will wait for power on command." << std::endl;
 
-class ORPEMain : public RODOS::StaticThread<> {
-public:
+//auto t1 = thread(threadTest);
 
-    ORPEMain() : StaticThread<>("ORPEMain Thread") {}
+//while(t1.joinable()) 
+//    suspendCallerUntil(NOW() + 100*MILLISECONDS);
 
-    void init() override {
+    while (1)
+    {
+    //orpeTestingTopic.publish(RODOS::SECONDS_NOW());
+    //cout << "Time sec: " << RODOS::SECONDS_NOW() << endl;
+        //suspendCallerUntil(NOW() + 100*MILLISECONDS);
+    //continue;
+    //comPort.update();
+    bool powerCommand = false;
+        if (orpePowerCommandBuf.getOnlyIfNewData(powerCommand)) {
 
-    }
-
-    void run() override {
-
-        std::cout << "Starting Estimator software.\n Communication initialising..." << std::endl;
-
-        //comPort.initialiseUart();
-
-        std::cout << "Communication initialised. Starting loop. Will wait for power on command." << std::endl;
-	
-	//auto t1 = thread(threadTest);
-
-	//while(t1.joinable()) 
-	//    suspendCallerUntil(NOW() + 100*MILLISECONDS);
-
-        while (1)
-        {
-	    //orpeTestingTopic.publish(RODOS::SECONDS_NOW());
-	    //cout << "Time sec: " << RODOS::SECONDS_NOW() << endl;
-            //suspendCallerUntil(NOW() + 100*MILLISECONDS);
-	    //continue;
-	    //comPort.update();
-	    bool powerCommand = false;
-            if (orpePowerCommandBuf.getOnlyIfNewData(powerCommand)) {
-
-                if (powerCommand) {
-                    //runEstimatorInThread("PowerCommandRun");
-		    auto t = thread(runEstimatorWithName, "Commanded");
-		    while (t.joinable())
-			suspendCallerUntil(NOW() + 100*MILLISECONDS);
-                }
-                
+            if (powerCommand) {
+                //runEstimatorInThread("PowerCommandRun");
+        auto t = thread(runEstimatorWithName, "Commanded");
+        while (t.joinable())
+        suspendCallerUntil(NOW() + 100*MILLISECONDS);
             }
-
-    #ifdef FORCE_ESTIMATION_START
-            std::cout << "Forcing estimator to start. This is a debug setting!" << std::endl;
-            auto t = thread(runEstimatorWithName, "Forced");
-	    while (t.joinable())
-	        suspendCallerUntil(NOW() + 100*MILLISECONDS);
-    #endif
-
-    #ifdef RUN_ONCE
-            std::cout << "Exiting due to RUN_ONCE setting!" << std::endl;
-            break;
-    #endif
-
-            suspendCallerUntil(RODOS::NOW() + 100*RODOS::MILLISECONDS);
+            
         }
 
-        //comPort.closeUart();
-        
+#ifdef FORCE_ESTIMATION_START
+        std::cout << "Forcing estimator to start. This is a debug setting!" << std::endl;
+        auto t = thread(runEstimatorWithName, "Forced");
+    while (t.joinable())
+        suspendCallerUntil(NOW() + 100*MILLISECONDS);
+#endif
+
+#ifdef RUN_ONCE
+        std::cout << "Exiting due to RUN_ONCE setting!" << std::endl;
+        break;
+#endif
+
+        suspendCallerUntil(RODOS::NOW() + 100*RODOS::MILLISECONDS);
     }
 
+    //comPort.closeUart();
+    
+}
 
-};
-
-ORPEMain orpeApp;
