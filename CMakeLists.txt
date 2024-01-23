@@ -35,9 +35,9 @@ pkg_check_modules(LIBCAMERA REQUIRED libcamera)
 file(GLOB_RECURSE SRC_FILES src/*.cpp)
 file(GLOB_RECURSE LIB_FILES lib/*.cpp)
 
-add_executable(ORPE ${SRC_FILES} ipc/ipcOPRE.cpp)
+add_executable(ORPE ${SRC_FILES} ipc/ipcORPE.cpp)
 
-target_include_directories(ORPE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ipc/ipcOPRE.h)
+target_include_directories(ORPE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include ipc/ipcORPE.h)
 target_include_directories(ORPE PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 include_directories(${LIBCAMERA_INCLUDE_DIRS} ${OPENCV_INCLUDE_DIRS})
 
