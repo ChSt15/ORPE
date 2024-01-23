@@ -26,17 +26,6 @@ public:
 }
 
 
-
-struct OrpePoseEst {
-
-    // Received pose data.
-    int16_t px_, py_, pz_, ax_, ay_, az_;
-    // Received pose frame number.
-    uint32_t frameNum_;
-
-};
-
-
 extern RODOS::Topic<OrpePoseEst> orpePoseEstTopic;
 
 extern RODOS::Topic<bool> orpePowerCommandTopic;
