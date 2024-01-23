@@ -1,4 +1,8 @@
 #include <stddef.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h> // for O_* constant
+#include <cerrno>
 
 #include "Datastruct.h"
 #include "ipcRODOS.h"
