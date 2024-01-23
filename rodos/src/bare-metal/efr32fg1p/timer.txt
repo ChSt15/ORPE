@@ -1,0 +1,239 @@
+/*
+ * @file timer.cpp
+ * @date 2019/10/28
+ * @author Marcelo Alves & Jorge Oliveira
+ *
+ * Copyright 2019 University of Wuerzburg
+ *
+ * @brief Timer for system time and preemption
+ */
+
+
+#include "rodos.h"
+#include "hw_specific.h"
+#include "platform-parameter.h"
+
+#include "efr32fg1p133f256gm48.h"
+#include "core_cm4.h"
+#include "system_efr32fg1p.h"
+#include "em_timer.h"
+#include "em_cmu.h"
+
+/***** Preemption Timer - Cortex "SysTick" counter *****
+ *
+ * Timer to force scheduler calls -> preemption
+ * - cortex system counter is used -> "SysTick"
+ * - 32 bit counter running at CPU_CLK/10 (19 MHz/10 = 1.9MHz)
+ * -> max. value: 0xFFFF = 2^32 = 4 294 967 296
+ * -> 1ms       @ 1.9MHz: 1 900
+ * -> 10ms  	@ 1.9MHz: 19 000
+ * -> 100ms 	@ 1.9MHz: 190 000
+ * -> 1s	    @ 1.9MHz: 1 900 000 
+ * -> 2261s     @ 1.9MHz: 4 295 900 000 <- overflow!
+ */
+
+namespace RODOS {
+
+// PARAM_TIMER_INTERVAL = interval between 2 timer interrupts (see "platform-parameter.h")
+long long Timer::microsecondsInterval = PARAM_TIMER_INTERVAL;
+
+extern long long timeToTryAgainToSchedule;		//bare-metal-generic
+extern bool isSchedulingEnabled;
+
+
+extern "C" {
+/*
+ * Interrupt Service Routine for "SysTick" counter
+ *
+ * !!! Don't use "naked" for the ISR, because the system crashes
+ * -> maybe because not all registers are saved automatically
+ * -> it works when the compiler puts prologue and epilogue in the ISR
+ *    -> but this can be a problem when ISRs can interrupt each other
+ * -> this can happen when they don't have the same priority !!!
+ */
+void SysTick_Handler();
+void SysTick_Handler() 
+{
+	if(!isSchedulingEnabled) return;
+
+	long long timeNow = NOW();      // comment this out to improve performance, but: no time events any more
+	TimeEvent::propagate(timeNow);  // comment this out to improve performance, but: no time events any more
+
+	if(NOW() < timeToTryAgainToSchedule) return;
+
+	SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk; // set SW-IRQ to call scheduler
+}
+
+} // end extern "C"
+
+
+/* Initializes the hardware timer. */
+void Timer::init()
+{
+	// SystemCoreClock = 19 MHz
+	
+	uint32_t ticks = (SystemCoreClock/10) * Timer::microsecondsInterval / 1000000;
+	
+	// SysTick Reload Value Register
+	SysTick->LOAD  = (ticks & SysTick_LOAD_RELOAD_Msk) - 1;      	 /* Set reload register */
+  	
+	// SysTick Current Value Register
+	SysTick->VAL   = 0;                                          	 /* Load the SysTick Counter Value */
+										
+	// SysTick Control and Status Register
+	SysTick->CTRL  = SysTick_CTRL_TICKINT_Msk   |			             /* Enable SysTick interrupt */
+                        SysTick_CTRL_ENABLE_Msk;                 /* Enable SysTick system timer */
+
+	NVIC_SetPriority (SysTick_IRQn, (1<<__NVIC_PRIO_BITS) - 1);  	 /* Set Priority for Cortex-M0 System Interrupts */
+
+	return;                                                        /* Function successful */
+}
+
+/* Re-enables the timer interrupt. */
+void Timer::start()
+{
+	// SysTick Control and Status Register
+  SysTick->CTRL  = SysTick_CTRL_TICKINT_Msk   |			             /* Enable SysTick interrupt */
+                        SysTick_CTRL_ENABLE_Msk;                 /* Enable SysTick system timer */
+	return;
+}
+
+
+/* Disables the timer interrupt. */
+void Timer::stop()
+{
+	// SysTick Control and Status Register
+  SysTick->CTRL = 0;
+	return;
+}
+
+/* Set timer interval */
+void Timer::setInterval(const long long microsecondsInterval) 
+{
+  Timer::microsecondsInterval = microsecondsInterval;
+  return;
+}
+
+
+/***** System Time ******
+ *
+ * timer is used to generate the system time
+ * -> interrupt every 10ms
+ * -> time resolution: 1/timerClock = 285,7 ns
+ * -> max. timerCount = timerClock/100 = 35 000 (IRQ every 10ms)
+ */
+static const unsigned int timerClock = 3500000;
+
+unsigned long long nanoTime;
+
+extern "C" {
+/*
+ * Interrupt Service Routine for Timer
+ *
+ * !!! Don't use "naked" for the ISR, because the system crashes
+ * -> maybe because not all registers are saved automatically
+ * -> it works when the compiler puts prologue and epilogue in the ISR
+ *    -> but this can be a problem when ISRs can interrupt each other
+ * -> this can happen when they don't have the same priority !!!
+ */
+void TIMER0_IRQHandler(void);
+void TIMER0_IRQHandler(void)
+{ 
+  /* Clear flag for TIMER0 overflow interrupt */
+  TIMER_IntClear(TIMER0, TIMER_IF_OF);
+  NVIC_ClearPendingIRQ(TIMER0_IRQn);
+  nanoTime += 10000000; // 10M ns for each 10ms-tick 
+}
+
+} // end extern "C"
+
+void TIMER0_init();
+void TIMER0_init()
+{  
+  /* Enable clock for TIMER0 module */
+  CMU_ClockEnable(cmuClock_TIMER0, true);
+  
+  /* Select TIMER0 parameters */  
+  TIMER_Init_TypeDef timerInit;
+  timerInit.enable     = true; 
+  timerInit.debugRun   = false; 
+  timerInit.prescale   = timerPrescale4;      // 14 MHz / 4 = 3,5 MHz -> change in order improve resolution
+  timerInit.clkSel     = timerClkSelHFPerClk; 
+  timerInit.fallAction = timerInputActionNone; 
+  timerInit.riseAction = timerInputActionNone; 
+  timerInit.mode       = timerModeUp; 
+  timerInit.dmaClrAct  = false;
+  timerInit.quadModeX4 = false;
+  timerInit.oneShot    = false;
+  timerInit.sync       = false;
+  
+  /* Enable overflow interrupt */
+  TIMER_IntEnable(TIMER0, TIMER_IF_OF);
+  /* Set in Timer0 interrupt priority */
+  NVIC_SetPriority(TIMER0_IRQn, 255);  
+  /* Enable TIMER0 interrupt vector in NVIC */
+  NVIC_EnableIRQ(TIMER0_IRQn);
+  /* Set TIMER Top value */
+  TIMER_TopSet(TIMER0, timerClock/100);      // 10ms
+  /* Configure TIMER */
+  TIMER_Init(TIMER0, &timerInit);
+}
+
+/* Returns nanoseconds since startup */
+unsigned long long hwGetNanoseconds() 
+{
+  uint32_t count = 0;                     //value in the timer counter
+  unsigned long long returnTime = 0;
+  //unsigned long long countTime = 0;       //counter value converted to ns
+
+  // -> current time = nanoTime + value (ns) in counter timer 
+  // -> current time = nanoTime + 1 000 000 000 * countRegister/timerClock
+
+  // Disable Interrupt is no solution here (wrong values caused by missed interrupt)
+
+  // Read nanoTime twice, to make sure it has not changed while reading counter value
+  do {
+    returnTime = nanoTime;
+    count = TIMER_CounterGet(TIMER0);
+  } while(returnTime != nanoTime);
+
+  //countTime = 1000000000 / timerClock * count;
+
+  //return returnTime + countTime;
+
+  //STM stuff
+    /** low precision
+     * - nanos = 166ns * count (for tim2Clock = 6MHz)
+     * - nanos = 11ns * count (for tim2Clock = 84MHz)
+     * ! startup time might be wrong due to integer overflow !
+     */
+    //int nanos = 1000000000/timerClock * count;
+
+    /** high precision
+     * - nanos = 166,666666ns * count (for tim2Clock = 6MHz)
+     * - nanos = 11,904761s * count (for tim2Clock = 84MHz)
+     * - takes 4 times longer than low precision
+     */
+
+  	long long nanos = 0;
+	nanos = 1000000000/(timerClock/1000000);
+	nanos *= count;
+	nanos /= 1000000;
+
+	return returnTime + nanos;
+}
+
+/* Initializes the timer-functions */
+void hwInitTime()
+{
+    nanoTime = 0;
+    return;
+}
+
+
+// unsigned long long hwGetAbsoluteNanoseconds(void)
+// {
+//     return hwGetNanoseconds();// + timeAtStartup;
+// }
+
+}

@@ -1,0 +1,6 @@
+data/
+build/
+sonstiges/
+docs/
+.vscode/
+__pycache__/

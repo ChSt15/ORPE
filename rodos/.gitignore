@@ -1,0 +1,17 @@
+.idea/
+.vs/
+.vscode/
+.cache/
+build/
+CMakeLists.txt.user
+CMakeUserPresets.json
+compile_commands.json
+
+tst
+tmp
+*~
+*.o
+*.a
+*.swp
+!src/bare-metal/efr32fg1p/librail_efr32xg1_gcc_release.a
+

@@ -1,0 +1,39 @@
+before barrier
+                            Unblocking
+  unblock  = 1
+  waitFor = ok
+before barrier
+                            no action
+                            no action
+                            no action
+                            no action
+  waitFor = Timeout
+before barrier
+                            no action
+                            no action
+                            Unblocking
+  unblock  = 1
+  waitFor = ok
+before barrier
+                            no action
+                            Unblocking
+  unblock  = 1
+  waitFor = ok
+before barrier
+                            no action
+                            no action
+                            no action
+                            Unblocking
+  unblock  = 1
+  waitFor = ok
+before barrier
+                            Unblocking
+  unblock  = 1
+  waitFor = ok
+before barrier
+                            no action
+                            no action
+                            no action
+                            Unblocking
+  unblock  = 1
+hw_resetAndReboot() -> exit

@@ -1,0 +1,21 @@
+if("@package@" STREQUAL "")
+    message(FATAL_ERROR "Name of the Rodos package to uninstall is empty.")
+endif()
+
+set(folders "lib/@package@;include/rodos;src/rodos")
+list(TRANSFORM folders PREPEND "@CMAKE_INSTALL_PREFIX@/")
+foreach(folder ${folders})
+    message(STATUS "Uninstalling $ENV{DESTDIR}${folder}")
+    if(EXISTS "$ENV{DESTDIR}${folder}")
+        exec_program(
+            "@CMAKE_COMMAND@" ARGS "-E rm -r \"$ENV{DESTDIR}${folder}\""
+            OUTPUT_VARIABLE rm_out
+            RETURN_VALUE rm_retval
+        )
+        if(NOT "${rm_retval}" STREQUAL 0)
+            message(FATAL_ERROR "Problem when removing $ENV{DESTDIR}${folder}")
+        endif()
+    else()
+        message(STATUS "Folder $ENV{DESTDIR}${folder} does not exist.")
+    endif()
+endforeach()

@@ -1,0 +1,75 @@
+﻿
+Notes to 
+fields
+    receiverNode
+    receiverNodesBitMap
+in
+    topicInterface
+    NetMsgInfo
+    NetworkMessage
+
+NetMsg Type
+    TOPIC_LIST
+and topicID
+    TOPIC_ID_FOR_TOPICLIST_DISTRIBUTION
+
+Application:
+	distributed-topic-register
+
+Class
+    TopicListPerNode
+
+________________________
+Author: Sergio Montenegro
+Date  : 2022/08/01
+
+_______________________
+
+
+In RODOS network messages are normally sent in broadcast to all nodes and
+each receiver (node) selects the topics which it needs and discard all other
+messages. This work nice for radio-links, bus-systems and shared memory.
+For Networks with routers or point-to-point connections broadcast is bad.
+
+Each node has an Application "distributed-topic-register" which has 2 sides:
+1. “TopicPublisher” distributes a list of topics to which it has subscribers.
+This list is encoded in a message of type TopicListPerNode and distributed
+in the topic topicListDistribution which has an ID 1 and shall always be
+distributed in Broadcast.
+2. “TopicCollector” receives reports from TopicList and register in each
+local TopicInterface a list of nodes which have subscriber to it (to the topic)
+
+Each of the classes
+    TopicInterface 
+    NetMsgInfo and
+    NetworkMessage
+has the fields 
+    receiverNode and 
+    receiverNodesBitMap
+where it is encoded how to route the message in the network.
+Rodos prepare this fields but do not use them.  The content is
+first written (distributed-topic-register)  in TopicInterface and from there
+transferred (copied) to NetMsgInfo and then the gateway copies it again
+from NetMsgInfo to NetworkMessage and then the gate ways sends the message.
+
+And yes, these fields they are somehow redundant.
+For now we assume we have maximal 32 Nodes (our biggest network up to
+now was 20 nodes). (if you need 64, talk to us).
+If there are 0 external subscriber (receiverNodesBitMap equals 0) for a topic,
+then the gateway will not forward the corresponding message.
+
+If there is only one receiver, then its node-Id (or node index) will be
+written in receiverNode. In case there is no reciever then -2 and in case
+of more than 1 receiver this field contains -1.
+Simple Routers need just to see this field and send directly to the
+corresponding (channel/node) or, if -1 then send broadcast.
+The field receiverNodesBitMap is a 32 bit integer (a bitmap),
+where each bit represents a node index. A bit in 1 means the node
+with the same index like the bit has at least one subscriber for this topic.
+More intelligent router can use this field for a multicast distribution.
+
+
+(Point to Point is a subset of this method.
+In case there is only one subscriber for a topic
+then we have automatically a point to point connection.)
+

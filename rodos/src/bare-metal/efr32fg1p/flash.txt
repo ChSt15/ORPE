@@ -1,0 +1,4 @@
+
+openocd -f board/efm32.cfg -c " init;halt;flash write_image erase $BIN_FILE 0 bin;reset run; shutdown" 
+
+
